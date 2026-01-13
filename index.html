@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>專業證件照處理工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen p-4 md:p-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
+        <!-- Header -->
+        <div class="bg-blue-600 p-6 text-white text-center">
+            <h1 class="text-2xl font-bold">?? 專業證件照處理工具</h1>
+            <p class="mt-2 opacity-90">利用 AI 技術一鍵去背、校正比例</p>
+        </div>
+
+        <div class="p-6 space-y-6">
+            <!-- Upload Section -->
+            <div id="upload-section" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 transition-colors">
+                <input type="file" id="fileInput" class="hidden" accept="image/*">
+                <label for="fileInput" class="cursor-pointer">
+                    <div class="text-5xl mb-4">??</div>
+                    <p class="text-gray-600">點擊此處或拖放照片進行上傳</p>
+                    <p class="text-xs text-gray-400 mt-2">支援 JPG, PNG 格式</p>
+                </label>
+            </div>
+
+            <!-- Preview & Controls -->
+            <div id="process-section" class="hidden space-y-6">
+                <div class="flex flex-col md:flex-row gap-6 items-center justify-center">
+                    <div class="text-center">
+                        <p class="text-sm font-medium text-gray-500 mb-2">原始照片</p>
+                        <img id="sourcePreview" class="w-48 h-64 object-cover rounded-lg border shadow-sm" src="">
+                    </div>
+                    <div class="text-2xl text-gray-300 hidden md:block">?</div>
+                    <div class="text-center">
+                        <p class="text-sm font-medium text-gray-500 mb-2">處理結果</p>
+                        <div id="resultContainer" class="w-48 h-64 bg-gray-100 rounded-lg border flex items-center justify-center relative overflow-hidden">
+                            <img id="resultImage" class="hidden w-full h-full object-cover" src="">
+                            <div id="loadingOverlay" class="hidden flex flex-col items-center">
+                                <div class="loader mb-2"></div>
+                                <p class="text-xs text-blue-600">AI 處理中...</p>
+                            </div>
+                            <p id="placeholderText" class="text-gray-400 text-xs px-4 text-center">點擊下方按鈕開始處理</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-3 justify-center">
+                    <button id="btnGenerate" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-medium transition-all shadow-md flex items-center gap-2">
+                        ?? 轉換為白底證件照
+                    </button>
+                    <button id="btnReset" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-full font-medium transition-all">
+                        重選照片
+                    </button>
+                    <button id="btnDownload" class="hidden bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-full font-medium transition-all shadow-md">
+                        ?? 下載照片
+                    </button>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMsg" class="hidden p-4 bg-red-50 text-red-600 rounded-lg text-sm text-center"></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-4 bg-gray-50 border-t text-center">
+            <p class="text-xs text-gray-400">本工具使用 Gemini 2.5 影像模型處理。請確保臉部清晰無遮擋。</p>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = "";
+        const fileInput = document.getElementById('fileInput');
+        const uploadSection = document.getElementById('upload-section');
+        const processSection = document.getElementById('process-section');
+        const sourcePreview = document.getElementById('sourcePreview');
+        const resultImage = document.getElementById('resultImage');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const placeholderText = document.getElementById('placeholderText');
+        const btnGenerate = document.getElementById('btnGenerate');
+        const btnDownload = document.getElementById('btnDownload');
+        const btnReset = document.getElementById('btnReset');
+        const errorMsg = document.getElementById('errorMsg');
+
+        let base64Image = "";
+
+        // File Selection
+        fileInput.addEventListener('change', handleFile);
+        uploadSection.addEventListener('dragover', (e) => { e.preventDefault(); uploadSection.classList.add('border-blue-400'); });
+        uploadSection.addEventListener('dragleave', () => { uploadSection.classList.remove('border-blue-400'); });
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            handleFile({ target: { files: e.dataTransfer.files } });
+        });
+
+        function handleFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                base64Image = event.target.result.split(',')[1];
+                sourcePreview.src = event.target.result;
+                uploadSection.classList.add('hidden');
+                processSection.classList.remove('hidden');
+                btnDownload.classList.add('hidden');
+                resultImage.classList.add('hidden');
+                placeholderText.classList.remove('hidden');
+                errorMsg.classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        btnReset.addEventListener('click', () => {
+            uploadSection.classList.remove('hidden');
+            processSection.classList.add('hidden');
+            fileInput.value = "";
+        });
+
+        // API Call with Exponential Backoff
+        async function callGeminiImageAPI(prompt, base64) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{
+                    parts: [
+                        { text: prompt },
+                        { inlineData: { mimeType: "image/png", data: base64 } }
+                    ]
+                }],
+                generationConfig: {
+                    responseModalities: ["IMAGE"]
+                }
+            };
+
+            let delay = 1000;
+            for (let i = 0; i < 5; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.ok) return await response.json();
+                } catch (err) {}
+                await new Promise(r => setTimeout(r, delay));
+                delay *= 2;
+            }
+            throw new Error("連線失敗，請檢查網路後重試。");
+        }
+
+        btnGenerate.addEventListener('click', async () => {
+            if (!base64Image) return;
+
+            loadingOverlay.classList.remove('hidden');
+            placeholderText.classList.add('hidden');
+            resultImage.classList.add('hidden');
+            btnGenerate.disabled = true;
+            btnGenerate.classList.add('opacity-50');
+            errorMsg.classList.add('hidden');
+
+            const prompt = "Please convert this person's photo into a professional ID photo. 1. Remove the background and replace it with pure white (#FFFFFF). 2. Crop the image to a standard 2-inch passport photo proportion (centering the face). 3. Maintain the person's facial features exactly as they are. Output only the processed image.";
+
+            try {
+                const result = await callGeminiImageAPI(prompt, base64Image);
+                const generatedBase64 = result.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+
+                if (generatedBase64) {
+                    resultImage.src = `data:image/png;base64,${generatedBase64}`;
+                    resultImage.classList.remove('hidden');
+                    btnDownload.classList.remove('hidden');
+                } else {
+                    throw new Error("無法生成影像，請更換一張更清晰的照片試試。");
+                }
+            } catch (err) {
+                errorMsg.innerText = err.message;
+                errorMsg.classList.remove('hidden');
+                placeholderText.classList.remove('hidden');
+            } finally {
+                loadingOverlay.classList.add('hidden');
+                btnGenerate.disabled = false;
+                btnGenerate.classList.remove('opacity-50');
+            }
+        });
+
+        btnDownload.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.href = resultImage.src;
+            link.download = 'ID_Photo_Pro.png';
+            link.click();
+        });
+    </script>
+</body>
+</html>
