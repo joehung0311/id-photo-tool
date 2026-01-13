@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>�M�~�ҥ�ӳB�z�u��</title>
+    <title>專業證件照處理工具</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .loader {
@@ -24,8 +24,8 @@
     <div class="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
         <!-- Header -->
         <div class="bg-blue-600 p-6 text-white text-center">
-            <h1 class="text-2xl font-bold">?? �M�~�ҥ�ӳB�z�u��</h1>
-            <p class="mt-2 opacity-90">�Q�� AI �޳N�@��h�I�B�ե����</p>
+            <h1 class="text-2xl font-bold">📸 專業證件照處理工具</h1>
+            <p class="mt-2 opacity-90">利用 AI 技術一鍵去背、校正比例</p>
         </div>
 
         <div class="p-6 space-y-6">
@@ -33,9 +33,9 @@
             <div id="upload-section" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 transition-colors">
                 <input type="file" id="fileInput" class="hidden" accept="image/*">
                 <label for="fileInput" class="cursor-pointer">
-                    <div class="text-5xl mb-4">??</div>
-                    <p class="text-gray-600">�I�����B�Ω��Ӥ��i��W��</p>
-                    <p class="text-xs text-gray-400 mt-2">�䴩 JPG, PNG �榡</p>
+                    <div class="text-5xl mb-4">📤</div>
+                    <p class="text-gray-600">點擊此處或拖放照片進行上傳</p>
+                    <p class="text-xs text-gray-400 mt-2">支援 JPG, PNG 格式</p>
                 </label>
             </div>
 
@@ -43,32 +43,32 @@
             <div id="process-section" class="hidden space-y-6">
                 <div class="flex flex-col md:flex-row gap-6 items-center justify-center">
                     <div class="text-center">
-                        <p class="text-sm font-medium text-gray-500 mb-2">��l�Ӥ�</p>
+                        <p class="text-sm font-medium text-gray-500 mb-2">原始照片</p>
                         <img id="sourcePreview" class="w-48 h-64 object-cover rounded-lg border shadow-sm" src="">
                     </div>
-                    <div class="text-2xl text-gray-300 hidden md:block">?</div>
+                   <div class="text-2xl text-gray-300 hidden md:block">➡</div>
                     <div class="text-center">
-                        <p class="text-sm font-medium text-gray-500 mb-2">�B�z���G</p>
+                        <p class="text-sm font-medium text-gray-500 mb-2">處理結果</p>
                         <div id="resultContainer" class="w-48 h-64 bg-gray-100 rounded-lg border flex items-center justify-center relative overflow-hidden">
                             <img id="resultImage" class="hidden w-full h-full object-cover" src="">
                             <div id="loadingOverlay" class="hidden flex flex-col items-center">
                                 <div class="loader mb-2"></div>
-                                <p class="text-xs text-blue-600">AI �B�z��...</p>
+                                <p class="text-xs text-blue-600">AI 處理中...</p>
                             </div>
-                            <p id="placeholderText" class="text-gray-400 text-xs px-4 text-center">�I���U����s�}�l�B�z</p>
+                            <p id="placeholderText" class="text-gray-400 text-xs px-4 text-center">點擊下方按鈕開始處理</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="flex flex-wrap gap-3 justify-center">
                     <button id="btnGenerate" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-medium transition-all shadow-md flex items-center gap-2">
-                        ?? �ഫ���թ��ҥ��
+                        🪄 轉換為白底證件照
                     </button>
                     <button id="btnReset" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-full font-medium transition-all">
-                        ����Ӥ�
+                        重選照片
                     </button>
                     <button id="btnDownload" class="hidden bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-full font-medium transition-all shadow-md">
-                        ?? �U���Ӥ�
+                       💾 下載照片
                     </button>
                 </div>
             </div>
@@ -79,7 +79,7 @@
 
         <!-- Footer -->
         <div class="p-4 bg-gray-50 border-t text-center">
-            <p class="text-xs text-gray-400">���u��ϥ� Gemini 2.5 �v���ҫ��B�z�C�нT�O�y���M���L�B�סC</p>
+            <p class="text-xs text-gray-400">本工具使用 Gemini 2.5 影像模型處理。請確保臉部清晰無遮擋。</p>
         </div>
     </div>
 
@@ -160,7 +160,7 @@
                 await new Promise(r => setTimeout(r, delay));
                 delay *= 2;
             }
-            throw new Error("�s�u���ѡA���ˬd�����᭫�աC");
+            throw new Error("連線失敗，請檢查網路後重試。");
         }
 
         btnGenerate.addEventListener('click', async () => {
@@ -184,7 +184,7 @@
                     resultImage.classList.remove('hidden');
                     btnDownload.classList.remove('hidden');
                 } else {
-                    throw new Error("�L�k�ͦ��v���A�Ч󴫤@�i��M�����Ӥ��ոաC");
+                    throw new Error("無法生成影像，請更換一張更清晰的照片試試。");
                 }
             } catch (err) {
                 errorMsg.innerText = err.message;
@@ -205,4 +205,5 @@
         });
     </script>
 </body>
+
 </html>
